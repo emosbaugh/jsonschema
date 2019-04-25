@@ -104,6 +104,12 @@ type Reflector struct {
 	// IgnoredTypes defines a slice of types that should be ignored in the schema,
 	// switching to just allowing additional properties instead.
 	IgnoredTypes []interface{}
+
+	// PkgPathInName will prefix the definitions with the package path.
+	PkgPathInName bool
+
+	// StripPrefix will strip the defined prefix from the expanded name.
+	StripPrefix string
 }
 
 // Reflect reflects to Schema from a value.
@@ -126,7 +132,7 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 		}
 		r.reflectStructFields(st, definitions, t)
 		r.reflectStruct(definitions, t)
-		delete(definitions, t.Name())
+		delete(definitions, r.getDefinitionName(t))
 		return &Schema{Type: st, Definitions: definitions}
 	}
 
@@ -161,10 +167,6 @@ type protoEnum interface {
 var protoEnumType = reflect.TypeOf((*protoEnum)(nil)).Elem()
 
 func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Type {
-	// Already added to definitions?
-	if _, ok := definitions[t.Name()]; ok {
-		return &Type{Ref: "#/definitions/" + t.Name()}
-	}
 
 	// jsonpb will marshal protobuf enum options as either strings or integers.
 	// It will unmarshal either.
@@ -250,36 +252,41 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 
 // Refects a struct to a JSON Schema type.
 func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type) *Type {
-	for _, ignored := range r.IgnoredTypes {
-		if reflect.TypeOf(ignored) == t {
-			st := &Type{
-				Type:                 "object",
-				Properties:           map[string]*Type{},
-				AdditionalProperties: []byte("true"),
-			}
-			definitions[t.Name()] = st
+	name := r.getDefinitionName(t)
 
-			return &Type{
-				Version: Version,
-				Ref:     "#/definitions/" + t.Name(),
-			}
+	// Already added to definitions?
+	if _, ok := definitions[name]; !ok {
+		for _, ignored := range r.IgnoredTypes {
+			if reflect.TypeOf(ignored) == t {
+				st := &Type{
+					Type:                 "object",
+					Properties:           map[string]*Type{},
+					AdditionalProperties: []byte("true"),
+				}
+				definitions[name] = st
 
+				return &Type{
+					Version: Version,
+					Ref:     "#/definitions/" + name,
+				}
+			}
 		}
+
+		st := &Type{
+			Type:                 "object",
+			Properties:           map[string]*Type{},
+			AdditionalProperties: []byte("false"),
+		}
+		if r.AllowAdditionalProperties {
+			st.AdditionalProperties = []byte("true")
+		}
+		definitions[name] = st
+		r.reflectStructFields(st, definitions, t)
 	}
-	st := &Type{
-		Type:                 "object",
-		Properties:           map[string]*Type{},
-		AdditionalProperties: []byte("false"),
-	}
-	if r.AllowAdditionalProperties {
-		st.AdditionalProperties = []byte("true")
-	}
-	definitions[t.Name()] = st
-	r.reflectStructFields(st, definitions, t)
 
 	return &Type{
 		Version: Version,
-		Ref:     "#/definitions/" + t.Name(),
+		Ref:     "#/definitions/" + name,
 	}
 }
 
@@ -516,4 +523,18 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool) {
 	}
 
 	return name, required
+}
+
+func (r *Reflector) getDefinitionName(t reflect.Type) string {
+	if !r.PkgPathInName {
+		return t.Name()
+	}
+	prefix := strings.Replace(
+		strings.Replace(
+			strings.TrimPrefix(t.PkgPath(), r.StripPrefix+"/"),
+			".", "", -1,
+		),
+		"/", ".", -1,
+	)
+	return strings.Join([]string{prefix, t.Name()}, ".")
 }

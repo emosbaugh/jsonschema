@@ -83,6 +83,7 @@ var schemaGenerationTests = []struct {
 	{&Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/required_from_jsontags.json"},
 	{&Reflector{ExpandedStruct: true}, "fixtures/defaults_expanded_toplevel.json"},
 	{&Reflector{IgnoredTypes: []interface{}{GrandfatherType{}}}, "fixtures/ignore_type.json"},
+	{&Reflector{PkgPathInName: true}, "fixtures/defaults_pkgpathinname.json"},
 }
 
 func TestSchemaGeneration(t *testing.T) {
