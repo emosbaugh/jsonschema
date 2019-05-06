@@ -151,9 +151,10 @@ type Definitions map[string]*Type
 // Available Go defined types for JSON Schema Validation.
 // RFC draft-wright-json-schema-validation-00, section 7.3
 var (
-	timeType = reflect.TypeOf(time.Time{}) // date-time RFC section 7.3.1
-	ipType   = reflect.TypeOf(net.IP{})    // ipv4 and ipv6 RFC section 7.3.4, 7.3.5
-	uriType  = reflect.TypeOf(url.URL{})   // uri RFC section 7.3.6
+	timeType        = reflect.TypeOf(time.Time{}) // date-time RFC section 7.3.1
+	ipType          = reflect.TypeOf(net.IP{})    // ipv4 and ipv6 RFC section 7.3.4, 7.3.5
+	uriType         = reflect.TypeOf(url.URL{})   // uri RFC section 7.3.6
+	emptyStructType = reflect.TypeOf(struct{}{})
 )
 
 // Byte slices will be encoded as base64
@@ -194,6 +195,8 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 			return &Type{Type: "string", Format: "date-time"}
 		case uriType: // uri RFC section 7.3.6
 			return &Type{Type: "string", Format: "uri"}
+		case emptyStructType:
+			return &Type{Type: ""}
 		default:
 			return r.reflectStruct(definitions, t)
 		}

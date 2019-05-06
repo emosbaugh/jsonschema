@@ -1,6 +1,6 @@
 {
-    "$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
-    "$ref": "#\/definitions\/githubcom.alecthomas.jsonschema.TestUser",
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/githubcom.alecthomas.jsonschema.TestUser",
     "definitions": {
       "githubcom.alecthomas.jsonschema.GrandfatherType": {
         "required": [
@@ -33,7 +33,7 @@
           "TestFlag": {
             "type": "boolean"
           },
-          "age":{
+          "age": {
             "maximum": 120,
             "minimum": 18,
             "exclusiveMaximum": true,
@@ -62,11 +62,12 @@
             "items": {
               "type": "integer"
             },
-            "type": "array"
+            "type": "array",
+            "description": "list of IDs, omitted when empty"
           },
           "grand": {
-            "$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
-            "$ref": "#\/definitions\/githubcom.alecthomas.jsonschema.GrandfatherType"
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/githubcom.alecthomas.jsonschema.GrandfatherType"
           },
           "id": {
             "type": "integer"
@@ -75,7 +76,14 @@
             "type": "string",
             "maxLength": 20,
             "minLength": 1,
-            "pattern": ".*"
+            "pattern": ".*",
+            "title": "the name",
+            "description": "this is a property",
+            "default": "alex",
+            "examples": [
+              "joe",
+              "lucy"
+            ]
           },
           "network_address": {
             "type": "string",
@@ -111,4 +119,4 @@
         "type": "object"
       }
     }
-  }
+}
